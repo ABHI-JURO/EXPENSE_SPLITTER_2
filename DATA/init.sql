@@ -1,3 +1,5 @@
+  CREATE DATABASE expense_splitter;
+
 -- Users
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
