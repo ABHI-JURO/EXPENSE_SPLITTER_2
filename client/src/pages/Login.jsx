@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { login } from "../features/auth/authSlice";
-import loginBg from "../assets/login-bg2.jpg";
+import loginBg from "../assets/login-bg.jpg";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -20,70 +20,84 @@ function Login() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center"
-      style={{
-        backgroundImage: `url(${loginBg})`,
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl p-8 shadow-2xl"
+    <div className="min-h-screen flex">
+      {/* Left: image panel, desktop only */}
+      <div
+        className="hidden md:block md:w-1/2 bg-cover bg-center relative"
+        style={{ backgroundImage: `url(${loginBg})` }}
       >
-        <h1 className="text-2xl font-bold text-white text-center mb-6 lowercase tracking-wide">
-          login
-        </h1>
-
-        {error && (
-          <p className="text-red-300 text-sm mb-4 text-center">{error}</p>
-        )}
-
-        <input
-          type="email"
-          placeholder="username"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full bg-white/10 border border-white/30 rounded-full px-5 py-3 mb-4 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
-        />
-
-        <input
-          type="password"
-          placeholder="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full bg-white/10 border border-white/30 rounded-full px-5 py-3 mb-3 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
-        />
-
-        <div className="flex items-center justify-between text-sm text-white/80 mb-6 px-1">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" className="rounded" />
-            remember me
-          </label>
-          <a href="#" className="hover:underline">
-            forget password
-          </a>
+        <div className="absolute inset-0 bg-bg/40" />
+        <div className="absolute bottom-10 left-10 right-10">
+          <p className="font-serif text-2xl text-white leading-snug">
+            Split costs.
+            <br />
+            Settle up.
+            <br />
+            Stay friends.
+          </p>
         </div>
+      </div>
 
-        <button
-          type="submit"
-          disabled={status === "loading"}
-          className="w-full bg-white text-gray-800 font-medium py-3 rounded-full hover:bg-gray-100 transition disabled:opacity-50"
-        >
-          {status === "loading" ? "logging in..." : "login"}
-        </button>
+      {/* Right: form panel */}
+      <div className="w-full md:w-1/2 bg-bg flex items-center justify-center px-8">
+        <div className="w-full max-w-sm">
+          <h1 className="font-serif text-2xl text-[#F4F2EE] mb-1">Tally</h1>
+          <p className="text-white/40 text-sm mb-8">Welcome back.</p>
 
-        <p className="text-sm text-white/80 mt-5 text-center">
-          Dont have an account?{" "}
-          <Link
-            to="/register"
-            className="text-white font-semibold hover:underline"
-          >
-            register
-          </Link>
-        </p>
-      </form>
+          <form onSubmit={handleSubmit}>
+            {error && <p className="text-alert text-sm mb-4">{error}</p>}
+
+            <div className="mb-4">
+              <label className="text-white/50 text-xs mb-1.5 block">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+                className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2.5 text-[#F4F2EE] placeholder-white/25 focus:outline-none focus:border-accent transition-colors"
+              />
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-white/50 text-xs">Password</label>
+                <a
+                  href="#"
+                  className="text-white/30 text-xs hover:text-white/60 transition-colors"
+                >
+                  Forgot password?
+                </a>
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full bg-surface border border-white/10 rounded-lg px-4 py-2.5 text-[#F4F2EE] placeholder-white/25 focus:outline-none focus:border-accent transition-colors"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              className="w-full bg-accent text-[#0F1512] font-medium py-2.5 rounded-lg hover:bg-[#7FAE8F] transition-colors disabled:opacity-50"
+            >
+              {status === "loading" ? "Signing in…" : "Sign in"}
+            </button>
+
+            <p className="text-white/40 text-sm mt-6 text-center">
+              New here?{" "}
+              <Link to="/register" className="text-accent hover:underline">
+                Create an account
+              </Link>
+            </p>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

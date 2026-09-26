@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@theme {
+  --color-bg: #0f1512;
+  --color-surface: #171f1b;
+  --color-accent: #8fbf9f;
+  --color-alert: #d98b7a;
+
+  --font-serif: "Fraunces", serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+.app-bg {
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(143, 191, 159, 0.06),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 85% 90%,
+      rgba(217, 139, 122, 0.05),
+      transparent 40%
+    );
+  background-attachment: fixed;
+}
