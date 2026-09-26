@@ -6,6 +6,7 @@ export const login = createAsyncThunk(
   async ({ email, password }) => {
     const res = await axiosInstance.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
     return res.data.user;
   },
 );
@@ -19,14 +20,17 @@ export const register = createAsyncThunk(
       password,
     });
     localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
     return res.data.user;
   },
 );
 
+const storedUser = localStorage.getItem("user");
+
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user: null,
+    user: storedUser ? JSON.parse(storedUser) : null,
     status: "idle", // idle | loading | succeeded | failed
     error: null,
   },
@@ -34,6 +38,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
   },
   extraReducers: (builder) => {
