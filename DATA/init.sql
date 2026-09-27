@@ -59,3 +59,5 @@ CREATE INDEX idx_expenses_group ON expenses(group_id);
 CREATE INDEX idx_splits_expense ON expense_splits(expense_id);
 CREATE INDEX idx_splits_user ON expense_splits(user_id);
 CREATE INDEX idx_settlements_group ON settlements(group_id);
+
+ALTER TABLE expenses ADD COLUMN settled BOOLEAN DEFAULT false;

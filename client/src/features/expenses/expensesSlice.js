@@ -44,6 +44,14 @@ export const deleteExpense = createAsyncThunk("expenses/delete", async (id) => {
   return id;
 });
 
+export const toggleExpenseSettled = createAsyncThunk(
+  "expenses/toggleSettled",
+  async ({ id, settled }) => {
+    await axiosInstance.patch(`/expenses/${id}/settle`, { settled });
+    return { id, settled };
+  },
+);
+
 const expensesSlice = createSlice({
   name: "expenses",
   initialState: {
@@ -72,6 +80,9 @@ const expensesSlice = createSlice({
         // component will re-fetch after this
       })
       .addCase(deleteExpense.fulfilled, (state) => {
+        // component will re-fetch after this
+      })
+      .addCase(toggleExpenseSettled.fulfilled, (state) => {
         // component will re-fetch after this
       });
   },

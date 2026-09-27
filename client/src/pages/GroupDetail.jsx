@@ -10,6 +10,8 @@ import {
   LogOut,
   Pencil,
   Trash2,
+  CheckCircle2,
+  RotateCcw,
 } from "lucide-react";
 
 import axiosInstance from "../api/axiosInstance";
@@ -19,6 +21,7 @@ import {
   createExpense,
   updateExpense,
   deleteExpense,
+  toggleExpenseSettled,
 } from "../features/expenses/expensesSlice";
 
 import {
@@ -50,6 +53,8 @@ function GroupDetail() {
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [expandedExpenseId, setExpandedExpenseId] = useState(null);
+  const [currentOpen, setCurrentOpen] = useState(true);
+  const [settledOpen, setSettledOpen] = useState(false);
 
   const loadAll = () => {
     dispatch(fetchGroupExpenses(groupId));
@@ -138,6 +143,12 @@ function GroupDetail() {
     loadAll();
   };
 
+  const handleToggleSettled = async (exp) => {
+    await dispatch(toggleExpenseSettled({ id: exp.id, settled: !exp.settled }));
+    setExpandedExpenseId(null);
+    loadAll();
+  };
+
   const handleSettleUp = async (debt) => {
     await dispatch(
       recordSettlement({
@@ -169,6 +180,9 @@ function GroupDetail() {
       setShowLeaveConfirm(false);
     }
   };
+
+  const currentExpenses = expenses.filter((e) => !e.settled);
+  const settledExpenses = expenses.filter((e) => e.settled);
 
   return (
     <div className="min-h-screen app-bg text-[#F4F2EE]">
@@ -366,70 +380,190 @@ function GroupDetail() {
             </form>
           )}
 
-          <div className="divide-y divide-white/8">
-            {expenses.map((exp) => {
-              const isExpanded = expandedExpenseId === exp.id;
-              const isOwner = currentUser?.id === exp.paid_by;
-
-              return (
-                <div key={exp.id} className="py-3">
-                  <button
-                    onClick={() =>
-                      isOwner &&
-                      setExpandedExpenseId(isExpanded ? null : exp.id)
-                    }
-                    className={`w-full flex items-center justify-between text-left ${
-                      isOwner ? "cursor-pointer" : "cursor-default"
-                    }`}
-                  >
-                    <div>
-                      <p className="text-white/85">{exp.description}</p>
-                      <p className="text-xs text-white/40 mt-0.5">
-                        {exp.paid_by_name} · {exp.category}
-                      </p>
-                    </div>
-                    <span className="font-serif text-lg text-white/90">
-                      ₹{exp.amount}
-                    </span>
-                  </button>
-
-                  {isOwner && (
-                    <div
-                      className={`grid transition-all duration-200 ease-in-out ${
-                        isExpanded
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0"
-                      }`}
-                    >
-                      <div className="overflow-hidden">
-                        <div className="flex items-center gap-2 pt-3">
-                          <button
-                            onClick={() => {
-                              startEditExpense(exp);
-                              setExpandedExpenseId(null);
-                            }}
-                            className="flex items-center gap-1.5 text-xs bg-surface border border-white/10 px-3 py-1.5 rounded-full text-white/60 hover:text-accent hover:border-accent/40 transition-all"
-                          >
-                            <Pencil size={12} />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteConfirmId(exp.id);
-                              setExpandedExpenseId(null);
-                            }}
-                            className="flex items-center gap-1.5 text-xs bg-surface border border-white/10 px-3 py-1.5 rounded-full text-white/60 hover:text-alert hover:border-alert/40 transition-all"
-                          >
-                            <Trash2 size={12} />
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+          {/* Current expenses dropdown */}
+          <div className="bg-surface border border-white/8 rounded-2xl overflow-hidden mb-4">
+            <button
+              onClick={() => setCurrentOpen(!currentOpen)}
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.02] transition-colors"
+            >
+              <span className="text-sm font-medium text-white/85">
+                Current · {currentExpenses.length}
+              </span>
+              {currentOpen ? (
+                <ChevronUp size={16} className="text-white/40" />
+              ) : (
+                <ChevronDown size={16} className="text-white/40" />
+              )}
+            </button>
+            <div
+              className={`grid transition-all duration-300 ease-in-out ${
+                currentOpen
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="px-5 pb-3 divide-y divide-white/8 border-t border-white/8">
+                  {currentExpenses.length === 0 && (
+                    <p className="text-white/40 text-sm py-4">
+                      Nothing outstanding.
+                    </p>
                   )}
+                  {currentExpenses.map((exp) => {
+                    const isExpanded = expandedExpenseId === exp.id;
+                    const isOwner = currentUser?.id === exp.paid_by;
+                    return (
+                      <div key={exp.id} className="py-3">
+                        <button
+                          onClick={() =>
+                            isOwner &&
+                            setExpandedExpenseId(isExpanded ? null : exp.id)
+                          }
+                          className={`w-full flex items-center justify-between text-left ${
+                            isOwner ? "cursor-pointer" : "cursor-default"
+                          }`}
+                        >
+                          <div>
+                            <p className="text-white/85">{exp.description}</p>
+                            <p className="text-xs text-white/40 mt-0.5">
+                              {exp.paid_by_name} · {exp.category}
+                            </p>
+                          </div>
+                          <span className="font-serif text-lg text-white/90">
+                            ₹{exp.amount}
+                          </span>
+                        </button>
+                        {isOwner && (
+                          <div
+                            className={`grid transition-all duration-200 ease-in-out ${
+                              isExpanded
+                                ? "grid-rows-[1fr] opacity-100"
+                                : "grid-rows-[0fr] opacity-0"
+                            }`}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="flex items-center gap-2 pt-3">
+                                <button
+                                  onClick={() => {
+                                    startEditExpense(exp);
+                                    setExpandedExpenseId(null);
+                                  }}
+                                  className="flex items-center gap-1.5 text-xs bg-bg border border-white/10 px-3 py-1.5 rounded-full text-white/60 hover:text-accent hover:border-accent/40 transition-all"
+                                >
+                                  <Pencil size={12} />
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDeleteConfirmId(exp.id);
+                                    setExpandedExpenseId(null);
+                                  }}
+                                  className="flex items-center gap-1.5 text-xs bg-bg border border-white/10 px-3 py-1.5 rounded-full text-white/60 hover:text-alert hover:border-alert/40 transition-all"
+                                >
+                                  <Trash2 size={12} />
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={() => handleToggleSettled(exp)}
+                                  className="flex items-center gap-1.5 text-xs bg-accent/10 border border-accent/30 px-3 py-1.5 rounded-full text-accent hover:bg-accent/20 transition-all"
+                                >
+                                  <CheckCircle2 size={12} />
+                                  Mark settled
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            </div>
+          </div>
+
+          {/* Settled expenses dropdown */}
+          <div className="bg-surface border border-white/8 rounded-2xl overflow-hidden">
+            <button
+              onClick={() => setSettledOpen(!settledOpen)}
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.02] transition-colors"
+            >
+              <span className="text-sm font-medium text-white/50">
+                Settled · {settledExpenses.length}
+              </span>
+              {settledOpen ? (
+                <ChevronUp size={16} className="text-white/40" />
+              ) : (
+                <ChevronDown size={16} className="text-white/40" />
+              )}
+            </button>
+            <div
+              className={`grid transition-all duration-300 ease-in-out ${
+                settledOpen
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="px-5 pb-3 divide-y divide-white/8 border-t border-white/8">
+                  {settledExpenses.length === 0 && (
+                    <p className="text-white/40 text-sm py-4">
+                      Nothing settled yet.
+                    </p>
+                  )}
+                  {settledExpenses.map((exp) => {
+                    const isExpanded = expandedExpenseId === exp.id;
+                    const isOwner = currentUser?.id === exp.paid_by;
+                    return (
+                      <div key={exp.id} className="py-3 opacity-60">
+                        <button
+                          onClick={() =>
+                            isOwner &&
+                            setExpandedExpenseId(isExpanded ? null : exp.id)
+                          }
+                          className={`w-full flex items-center justify-between text-left ${
+                            isOwner ? "cursor-pointer" : "cursor-default"
+                          }`}
+                        >
+                          <div>
+                            <p className="text-white/85 line-through decoration-white/30">
+                              {exp.description}
+                            </p>
+                            <p className="text-xs text-white/40 mt-0.5">
+                              {exp.paid_by_name} · {exp.category}
+                            </p>
+                          </div>
+                          <span className="font-serif text-lg text-white/60">
+                            ₹{exp.amount}
+                          </span>
+                        </button>
+                        {isOwner && (
+                          <div
+                            className={`grid transition-all duration-200 ease-in-out ${
+                              isExpanded
+                                ? "grid-rows-[1fr] opacity-100"
+                                : "grid-rows-[0fr] opacity-0"
+                            }`}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="flex items-center gap-2 pt-3">
+                                <button
+                                  onClick={() => handleToggleSettled(exp)}
+                                  className="flex items-center gap-1.5 text-xs bg-bg border border-white/10 px-3 py-1.5 rounded-full text-white/60 hover:text-white transition-all"
+                                >
+                                  <RotateCcw size={12} />
+                                  Move back to current
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

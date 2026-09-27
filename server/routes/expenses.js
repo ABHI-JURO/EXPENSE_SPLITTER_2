@@ -69,7 +69,7 @@ router.get("/group/:groupId", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT e.id, e.description, e.amount, e.split_type, e.category, e.created_at,
-              e.paid_by, u.name AS paid_by_name
+              e.paid_by, e.settled, u.name AS paid_by_name
        FROM expenses e
        JOIN users u ON u.id = e.paid_by
        WHERE e.group_id = $1
@@ -81,7 +81,6 @@ router.get("/group/:groupId", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // Update an expense — only the person who paid can edit it
 router.put("/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
@@ -171,6 +170,36 @@ router.delete("/:id", verifyToken, async (req, res) => {
 
     await pool.query("DELETE FROM expenses WHERE id = $1", [id]);
     res.json({ message: "Expense deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Toggle settled status — only the payer can mark it
+router.patch("/:id/settle", verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const { settled } = req.body;
+  const userId = req.user.user_id;
+
+  try {
+    const existing = await pool.query(
+      "SELECT paid_by FROM expenses WHERE id = $1",
+      [id],
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: "Expense not found" });
+    }
+    if (existing.rows[0].paid_by !== userId) {
+      return res
+        .status(403)
+        .json({ error: "Only the person who paid can update this" });
+    }
+
+    await pool.query("UPDATE expenses SET settled = $1 WHERE id = $2", [
+      settled,
+      id,
+    ]);
+    res.json({ message: "Updated" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
