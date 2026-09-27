@@ -141,4 +141,27 @@ router.get("/:groupId/simplified-debts", async (req, res) => {
   }
 });
 
+// Leave a group — protected, removes the LOGGED-IN user only
+router.delete("/:groupId/leave", verifyToken, async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.user_id;
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM group_members WHERE group_id = $1 AND user_id = $2 RETURNING *",
+      [groupId, userId],
+    );
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "You are not a member of this group" });
+    }
+
+    res.json({ message: "Left group successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
