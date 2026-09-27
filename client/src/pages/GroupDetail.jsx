@@ -8,16 +8,24 @@ import {
   UserPlus,
   Plus,
   LogOut,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+
 import axiosInstance from "../api/axiosInstance";
+
 import {
   fetchGroupExpenses,
   createExpense,
+  updateExpense,
+  deleteExpense,
 } from "../features/expenses/expensesSlice";
+
 import {
   fetchGroupBalances,
   fetchSimplifiedDebts,
 } from "../features/balances/balancesSlice";
+
 import { recordSettlement } from "../features/settlements/settlementsSlice";
 
 function GroupDetail() {
@@ -39,6 +47,8 @@ function GroupDetail() {
   const [formError, setFormError] = useState("");
   const [settleOpen, setSettleOpen] = useState(true);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const loadAll = () => {
     dispatch(fetchGroupExpenses(groupId));
@@ -55,7 +65,7 @@ function GroupDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
 
-  const handleAddExpense = async (e) => {
+  const handleSubmitExpense = async (e) => {
     e.preventDefault();
     setFormError("");
     if (!description.trim() || !amount || parseFloat(amount) <= 0) {
@@ -68,23 +78,62 @@ function GroupDetail() {
     }
     const splitAmount = parseFloat(amount) / members.length;
     const splits = members.map((m) => ({ user_id: m.id, amount: splitAmount }));
-    const result = await dispatch(
-      createExpense({
-        group_id: groupId,
-        description,
-        amount: parseFloat(amount),
-        split_type: "equal",
-        category,
-        splits,
-      }),
-    );
-    if (createExpense.rejected.match(result)) {
-      setFormError(result.error.message || "Failed to add expense.");
-      return;
+
+    let result;
+    if (editingExpenseId) {
+      result = await dispatch(
+        updateExpense({
+          id: editingExpenseId,
+          description,
+          amount: parseFloat(amount),
+          category,
+          splits,
+        }),
+      );
+      if (updateExpense.rejected.match(result)) {
+        setFormError(result.error.message || "Failed to update expense.");
+        return;
+      }
+    } else {
+      result = await dispatch(
+        createExpense({
+          group_id: groupId,
+          description,
+          amount: parseFloat(amount),
+          split_type: "equal",
+          category,
+          splits,
+        }),
+      );
+      if (createExpense.rejected.match(result)) {
+        setFormError(result.error.message || "Failed to add expense.");
+        return;
+      }
     }
+
     setDescription("");
     setAmount("");
+    setCategory("general");
+    setEditingExpenseId(null);
     setShowForm(false);
+    loadAll();
+  };
+
+  const startEditExpense = (exp) => {
+    setEditingExpenseId(exp.id);
+    setDescription(exp.description);
+    setAmount(String(exp.amount));
+    setCategory(exp.category || "general");
+    setShowForm(true);
+    setFormError("");
+  };
+
+  const handleDeleteExpense = async (id) => {
+    const result = await dispatch(deleteExpense(id));
+    if (deleteExpense.rejected.match(result)) {
+      setFormError(result.error.message || "Failed to delete expense.");
+    }
+    setDeleteConfirmId(null);
     loadAll();
   };
 
@@ -261,17 +310,25 @@ function GroupDetail() {
               Expenses
             </h2>
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => {
+                if (showForm) {
+                  setEditingExpenseId(null);
+                  setDescription("");
+                  setAmount("");
+                  setCategory("general");
+                }
+                setShowForm(!showForm);
+              }}
               className="flex items-center gap-1.5 text-sm text-accent hover:underline"
             >
               <Plus size={14} />
-              Add expense
+              {editingExpenseId ? "Editing…" : "Add expense"}
             </button>
           </div>
 
           {showForm && (
             <form
-              onSubmit={handleAddExpense}
+              onSubmit={handleSubmitExpense}
               className="bg-surface border border-white/8 rounded-2xl p-5 mb-5 space-y-3 animate-[fadeIn_0.25s_ease-out]"
             >
               {formError && <p className="text-alert text-sm">{formError}</p>}
@@ -303,7 +360,7 @@ function GroupDetail() {
                 type="submit"
                 className="bg-accent text-[#0F1512] font-medium px-4 py-2 rounded-lg hover:bg-[#7FAE8F] active:scale-95 transition-all"
               >
-                Add expense
+                {editingExpenseId ? "Save changes" : "Add expense"}
               </button>
             </form>
           )}
@@ -312,7 +369,7 @@ function GroupDetail() {
             {expenses.map((exp) => (
               <div
                 key={exp.id}
-                className="flex items-center justify-between py-3"
+                className="flex items-center justify-between py-3 group"
               >
                 <div>
                   <p className="text-white/85">{exp.description}</p>
@@ -320,9 +377,29 @@ function GroupDetail() {
                     {exp.paid_by_name} · {exp.category}
                   </p>
                 </div>
-                <span className="font-serif text-lg text-white/90">
-                  ₹{exp.amount}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="font-serif text-lg text-white/90">
+                    ₹{exp.amount}
+                  </span>
+                  {currentUser?.id === exp.paid_by && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => startEditExpense(exp)}
+                        className="p-1.5 text-white/40 hover:text-accent transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmId(exp.id)}
+                        className="p-1.5 text-white/40 hover:text-alert transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -363,6 +440,35 @@ function GroupDetail() {
                 className="flex-1 bg-alert text-[#0F1512] font-medium py-2.5 rounded-lg hover:brightness-110 active:scale-95 transition-all"
               >
                 Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete expense confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-surface border border-white/10 rounded-2xl p-6 max-w-sm w-full animate-[fadeIn_0.2s_ease-out]">
+            <h3 className="font-serif text-lg text-[#F4F2EE] mb-2">
+              Delete this expense?
+            </h3>
+            <p className="text-sm text-white/50 mb-6">
+              This will remove it and recalculate balances. This can't be
+              undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 bg-white/5 border border-white/10 text-white/80 py-2.5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteExpense(deleteConfirmId)}
+                className="flex-1 bg-alert text-[#0F1512] font-medium py-2.5 rounded-lg hover:brightness-110 active:scale-95 transition-all"
+              >
+                Delete
               </button>
             </div>
           </div>

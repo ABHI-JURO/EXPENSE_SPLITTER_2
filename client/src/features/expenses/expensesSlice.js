@@ -26,6 +26,24 @@ export const createExpense = createAsyncThunk(
   },
 );
 
+export const updateExpense = createAsyncThunk(
+  "expenses/update",
+  async ({ id, description, amount, category, splits }) => {
+    const res = await axiosInstance.put(`/expenses/${id}`, {
+      description,
+      amount,
+      category,
+      splits,
+    });
+    return res.data;
+  },
+);
+
+export const deleteExpense = createAsyncThunk("expenses/delete", async (id) => {
+  await axiosInstance.delete(`/expenses/${id}`);
+  return id;
+});
+
 const expensesSlice = createSlice({
   name: "expenses",
   initialState: {
@@ -48,6 +66,12 @@ const expensesSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(createExpense.fulfilled, (state) => {
+        // component will re-fetch after this
+      })
+      .addCase(updateExpense.fulfilled, (state) => {
+        // component will re-fetch after this
+      })
+      .addCase(deleteExpense.fulfilled, (state) => {
         // component will re-fetch after this
       });
   },
