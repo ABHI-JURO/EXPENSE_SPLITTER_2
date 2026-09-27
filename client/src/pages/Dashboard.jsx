@@ -130,7 +130,7 @@ function Dashboard() {
                     e.preventDefault();
                     setDeleteGroupId(group.id);
                   }}
-                  className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 p-1.5 text-white/30 hover:text-alert transition-all"
+                  className="absolute bottom-4 right-4 p-1.5 text-white/30 hover:text-alert transition-all"
                   title="Delete group"
                 >
                   <Trash2 size={14} />
