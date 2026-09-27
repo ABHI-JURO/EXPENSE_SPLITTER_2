@@ -49,6 +49,7 @@ function GroupDetail() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [expandedExpenseId, setExpandedExpenseId] = useState(null);
 
   const loadAll = () => {
     dispatch(fetchGroupExpenses(groupId));
@@ -366,42 +367,69 @@ function GroupDetail() {
           )}
 
           <div className="divide-y divide-white/8">
-            {expenses.map((exp) => (
-              <div
-                key={exp.id}
-                className="flex items-center justify-between py-3 group"
-              >
-                <div>
-                  <p className="text-white/85">{exp.description}</p>
-                  <p className="text-xs text-white/40 mt-0.5">
-                    {exp.paid_by_name} · {exp.category}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-serif text-lg text-white/90">
-                    ₹{exp.amount}
-                  </span>
-                  {currentUser?.id === exp.paid_by && (
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => startEditExpense(exp)}
-                        className="p-1.5 text-white/40 hover:text-accent transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(exp.id)}
-                        className="p-1.5 text-white/40 hover:text-alert transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+            {expenses.map((exp) => {
+              const isExpanded = expandedExpenseId === exp.id;
+              const isOwner = currentUser?.id === exp.paid_by;
+
+              return (
+                <div key={exp.id} className="py-3">
+                  <button
+                    onClick={() =>
+                      isOwner &&
+                      setExpandedExpenseId(isExpanded ? null : exp.id)
+                    }
+                    className={`w-full flex items-center justify-between text-left ${
+                      isOwner ? "cursor-pointer" : "cursor-default"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-white/85">{exp.description}</p>
+                      <p className="text-xs text-white/40 mt-0.5">
+                        {exp.paid_by_name} · {exp.category}
+                      </p>
+                    </div>
+                    <span className="font-serif text-lg text-white/90">
+                      ₹{exp.amount}
+                    </span>
+                  </button>
+
+                  {isOwner && (
+                    <div
+                      className={`grid transition-all duration-200 ease-in-out ${
+                        isExpanded
+                          ? "grid-rows-[1fr] opacity-100"
+                          : "grid-rows-[0fr] opacity-0"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-2 pt-3">
+                          <button
+                            onClick={() => {
+                              startEditExpense(exp);
+                              setExpandedExpenseId(null);
+                            }}
+                            className="flex items-center gap-1.5 text-xs bg-surface border border-white/10 px-3 py-1.5 rounded-full text-white/60 hover:text-accent hover:border-accent/40 transition-all"
+                          >
+                            <Pencil size={12} />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteConfirmId(exp.id);
+                              setExpandedExpenseId(null);
+                            }}
+                            className="flex items-center gap-1.5 text-xs bg-surface border border-white/10 px-3 py-1.5 rounded-full text-white/60 hover:text-alert hover:border-alert/40 transition-all"
+                          >
+                            <Trash2 size={12} />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
