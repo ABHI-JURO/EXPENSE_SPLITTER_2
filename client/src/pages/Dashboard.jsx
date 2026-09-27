@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Plus, Users, ArrowRight } from "lucide-react";
+import { Plus, Users, ArrowRight, Trash2 } from "lucide-react";
 import { logout } from "../features/auth/authSlice";
-import { fetchMyGroups, createGroup } from "../features/groups/groupsSlice";
+import {
+  fetchMyGroups,
+  createGroup,
+  deleteGroup,
+} from "../features/groups/groupsSlice";
 
 function Dashboard() {
   const user = useSelector((state) => state.auth.user);
@@ -12,6 +16,7 @@ function Dashboard() {
 
   const [showForm, setShowForm] = useState(false);
   const [groupName, setGroupName] = useState("");
+  const [deleteGroupId, setDeleteGroupId] = useState(null);
 
   useEffect(() => {
     dispatch(fetchMyGroups());
@@ -23,6 +28,12 @@ function Dashboard() {
     await dispatch(createGroup({ name: groupName, member_ids: [] }));
     setGroupName("");
     setShowForm(false);
+    dispatch(fetchMyGroups());
+  };
+
+  const handleDeleteGroup = async (id) => {
+    await dispatch(deleteGroup(id));
+    setDeleteGroupId(null);
     dispatch(fetchMyGroups());
   };
 
@@ -90,28 +101,74 @@ function Dashboard() {
         {/* Floating group tabs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {groups.map((group) => (
-            <Link
+            <div
               key={group.id}
-              to={`/groups/${group.id}`}
-              className="group relative bg-surface border border-white/8 rounded-2xl p-5 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_12px_30px_-10px_rgba(143,191,159,0.25)] active:scale-[0.98] active:translate-y-0"
+              className="group relative bg-surface border border-white/8 rounded-2xl p-5 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_12px_30px_-10px_rgba(143,191,159,0.25)]"
             >
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
-                  <Users size={16} />
+              <Link
+                to={`/groups/${group.id}`}
+                className="block active:scale-[0.98] transition-transform"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
+                    <Users size={16} />
+                  </div>
+                  <ArrowRight
+                    size={16}
+                    className="text-white/20 group-hover:text-accent group-hover:translate-x-0.5 transition-all"
+                  />
                 </div>
-                <ArrowRight
-                  size={16}
-                  className="text-white/20 group-hover:text-accent group-hover:translate-x-0.5 transition-all"
-                />
-              </div>
-              <p className="font-medium mt-4">{group.name}</p>
-              <p className="text-xs text-white/40 mt-1">
-                Created {new Date(group.created_at).toLocaleDateString()}
-              </p>
-            </Link>
+                <p className="font-medium mt-4">{group.name}</p>
+                <p className="text-xs text-white/40 mt-1">
+                  Created {new Date(group.created_at).toLocaleDateString()}
+                </p>
+              </Link>
+
+              {user?.id === group.created_by && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setDeleteGroupId(group.id);
+                  }}
+                  className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 p-1.5 text-white/30 hover:text-alert transition-all"
+                  title="Delete group"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </main>
+
+      {/* Delete group confirmation modal */}
+      {deleteGroupId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-surface border border-white/10 rounded-2xl p-6 max-w-sm w-full animate-[fadeIn_0.2s_ease-out]">
+            <h3 className="font-serif text-lg text-[#F4F2EE] mb-2">
+              Delete this group?
+            </h3>
+            <p className="text-sm text-white/50 mb-6">
+              This permanently removes the group, its members, expenses, and
+              history for everyone. This can't be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteGroupId(null)}
+                className="flex-1 bg-white/5 border border-white/10 text-white/80 py-2.5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteGroup(deleteGroupId)}
+                className="flex-1 bg-alert text-[#0F1512] font-medium py-2.5 rounded-lg hover:brightness-110 active:scale-95 transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes fadeIn {

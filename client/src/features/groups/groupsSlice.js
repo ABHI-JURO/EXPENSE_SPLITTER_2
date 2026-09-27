@@ -14,6 +14,14 @@ export const createGroup = createAsyncThunk(
   },
 );
 
+export const deleteGroup = createAsyncThunk(
+  "groups/delete",
+  async (groupId) => {
+    await axiosInstance.delete(`/groups/${groupId}`);
+    return groupId;
+  },
+);
+
 const groupsSlice = createSlice({
   name: "groups",
   initialState: {
@@ -37,6 +45,9 @@ const groupsSlice = createSlice({
       })
       .addCase(createGroup.fulfilled, (state) => {
         // After creating, the component will re-fetch the list
+      })
+      .addCase(deleteGroup.fulfilled, (state) => {
+        // component will re-fetch after this
       });
   },
 });

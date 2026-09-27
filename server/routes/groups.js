@@ -49,7 +49,7 @@ router.get("/mine", verifyToken, async (req, res) => {
   const userId = req.user.user_id;
   try {
     const result = await pool.query(
-      `SELECT g.id, g.name, g.created_at
+      `SELECT g.id, g.name, g.created_at, g.created_by
        FROM groups g
        JOIN group_members gm ON gm.group_id = g.id
        WHERE gm.user_id = $1
@@ -159,6 +159,32 @@ router.delete("/:groupId/leave", verifyToken, async (req, res) => {
     }
 
     res.json({ message: "Left group successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a group entirely — only the creator can do this
+router.delete("/:groupId", verifyToken, async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.user_id;
+
+  try {
+    const group = await pool.query(
+      "SELECT created_by FROM groups WHERE id = $1",
+      [groupId],
+    );
+    if (group.rows.length === 0) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+    if (group.rows[0].created_by !== userId) {
+      return res
+        .status(403)
+        .json({ error: "Only the group creator can delete this group" });
+    }
+
+    await pool.query("DELETE FROM groups WHERE id = $1", [groupId]);
+    res.json({ message: "Group deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
