@@ -62,15 +62,9 @@ function Login() {
             </div>
 
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-white/50 text-xs">Password</label>
-                <a
-                  href="#"
-                  className="text-white/30 text-xs hover:text-white/60 transition-colors"
-                >
-                  Forgot password?
-                </a>
-              </div>
+              <label className="text-white/50 text-xs mb-1.5 block">
+                Password
+              </label>
               <input
                 type="password"
                 value={password}
